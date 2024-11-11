@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="max-w-xl mx-auto my-8 bg-white shadow-md rounded-lg p-6">
+    <h1 class="text-2xl font-bold mb-4">Edit Transaction</h1>
+    <form method="post" action="{% url 'transaction_edit' transaction.id %}" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="code" class="block text-gray-700 font-bold mb-2">Code:</label>
+        <input type="text" id="code" name="code" value="{{ transaction.code }}" class="w-full px-3 py-2 border rounded" required>
+      </div>
+      <div>
+        <label for="name" class="block text-gray-700 font-bold mb-2">Name:</label>
+        <input type="text" id="name" name="name" value="{{ transaction.name }}" class="w-full px-3 py-2 border rounded" required>
+      </div>
+      <div>
+        <label for="account_type" class="block text-gray-700 font-bold mb-2">Account Type:</label>
+        <select id="account_type" name="account_type" class="w-full px-3 py-2 border rounded" required>
+          <option value="">Select Account Type</option>
+          {% for account_type in account_types %}
+            <option value="{{ account_type.id }}" {% if account_type == transaction.account_type %}selected{% endif %}>{{ account_type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="sub_account" class="block text-gray-700 font-bold mb-2">Sub Account:</label>
+        <select id="sub_account" name="sub_account" class="w-full px-3 py-2 border rounded" required>
+          <option value="">Select Sub Account</option>
+          {% for sub_account in sub_accounts %}
+            <option value="{{ sub_account.id }}" {% if sub_account == transaction.sub_account %}selected{% endif %}>{{ sub_account.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="action" class="block text-gray-700 font-bold mb-2">Action:</label>
+        <select id="action" name="action" class="w-full px-3 py-2 border rounded" required>
+          <option value="P&L" {% if transaction.action == "P&L" %}selected{% endif %}>P&L</option>
+          <option value="Balance Sheet" {% if transaction.action == "Balance Sheet" %}selected{% endif %}>Balance Sheet</option>
+        </select>
+      </div>
+      <div>
+        <label for="description" class="block text-gray-700 font-bold mb-2">Description:</label>
+        <textarea id="description" name="description" class="w-full px-3 py-2 border rounded" required>{{ transaction.description }}</textarea>
+      </div>
+      <div>
+        <label for="remarks" class="block text-gray-700 font-bold mb-2">Remarks:</label>
+        <textarea id="remarks" name="remarks" class="w-full px-3 py-2 border rounded">{{ transaction.remarks }}</textarea>
+      </div>
+      <div class="flex justify-end">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save Changes</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Load sub-accounts for the initial account type selection on page load
+    async function loadSubAccounts() {
+      const accountTypeId = document.getElementById('account_type').value;
+      const subAccountSelect = document.getElementById('sub_account');
+
+      if (accountTypeId) {
+        try {
+          const response = await fetch(`/sub-accounts/${accountTypeId}`);
+          const data = await response.json();
+
+          // Clear existing options and add a default option
+          subAccountSelect.options.length = 1;
+
+          data.forEach(subAccount => {
+            const option = document.createElement('option');
+            option.value = subAccount.id;
+            option.text = subAccount.name;
+            // Set the current sub-account as selected
+            if (subAccount.id == "{{ transaction.sub_account.id }}") {
+              option.selected = true;
+            }
+            subAccountSelect.add(option);
+          });
+        } catch (error) {
+          console.error("Error fetching sub-accounts:", error);
+        }
+      }
+    }
+
+    // Load sub-accounts on account type change
+    document.getElementById('account_type').addEventListener('change', loadSubAccounts);
+
+    // Load sub-accounts for the initially selected account type on page load
+    window.addEventListener('DOMContentLoaded', loadSubAccounts);
+  </script>
+{% endblock %}
